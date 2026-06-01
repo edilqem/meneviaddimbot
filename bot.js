@@ -7,7 +7,7 @@ const schedule = require('node-schedule');
 // CONFIG - CHANGE HERE
 // =============================================
 const CONFIG = {
-  TOKEN: '8548274709:AAGewDYBaJqSqa0dF7eofghtcm4_g6EJ-jc',       // Your token from BotFather
+  TOKEN: '8979500063:AAG0EgyPhv4IZt6953vwpyFgmWJlrNSaIFM',       // Your token from BotFather
   ADMIN_ID: 737032371,                   // Your Telegram ID (number)
   CHANNEL_ID: '@meneviaddim',             // Channel @name or -100xxxxxxxxxx ID
   WEEKLY_REPORT_DAY: 5,                 // 1=Monday ... 7=Sunday (5=Friday)
