@@ -279,8 +279,35 @@ bot.onText(/\/report/, (msg) => {
   bot.sendMessage(msg.chat.id, '📊 Hesabat göndərildi.');
 });
  
+
+// Avtomatik send - Cümə günü saat 12:00
 schedule.scheduleJob(
-  { dayOfWeek: CONFIG.WEEKLY_REPORT_DAY, hour: CONFIG.WEEKLY_REPORT_HOUR, minute: CONFIG.WEEKLY_REPORT_MINUTE },
+  { dayOfWeek: 5, hour: 12, minute: 0 },
+  async () => {
+    const data = loadData();
+    if (!data.options.length || !Object.keys(data.members).length) return;
+
+    let mesaj = `🌙 *Salam Aleykum, Cüməniz mübarək!* 🤲\n\n`;
+    mesaj += `*Bu həftəki tapşırıqlar:*\n\n`;
+    for (const [userId, member] of Object.entries(data.members)) {
+      const optionIndex = assignOption(data, userId, member.name);
+      mesaj += `👤 ${member.name}: *${data.options[optionIndex]}*\n`;
+    }
+    mesaj += `\nTapşırığını görmək üçün bota şəxsi /addim yazın.\nTamamladıqda /etdim ✅, tamamlamadıqda /etmedim ❌`;
+
+    try {
+      await bot.sendMessage(CONFIG.CHANNEL_ID, mesaj, { parse_mode: 'Markdown' });
+      saveData(data);
+      console.log('✅ Cümə tapşırıqları göndərildi');
+    } catch (e) {
+      console.log('Avtomatik send xətası:', e.message);
+    }
+  }
+);
+
+// Avtomatik report - Çərşənbə axşamı (4cü gün) saat 22:00
+schedule.scheduleJob(
+  { dayOfWeek: 4, hour: 22, minute: 0 },
   sendWeeklyReport
 );
  
