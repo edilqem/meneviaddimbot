@@ -83,14 +83,14 @@ bot.onText(/\/start/, (msg) => {
     `Salam, ${name}! 🌙\n\n` +
     `Admin hər kəs üçün həftəlik tapşırığı paylaşacaq.\n\n` +
     `Tapşırıq paylaşıldıqdan sonra:\n` +
-    `• Bu səhifədə /mytask yazıb öz tapşırığını görə bilərsən\n` +
+    `• Bu səhifədə /addim yazıb öz tapşırığını görə bilərsən\n` +
     `• Tapşırıq həmçinin kanalda da əks olunacaq\n\n` +
-    `Tapşırığı tamamladıqda /done ✅\n` +
-    `Tamamlaya bilmədikdə /notdone ❌`
+    `Tapşırığı tamamladıqda /etdim ✅\n` +
+    `Tamamlaya bilmədikdə /etmedim ❌`
   );
 });
  
-bot.onText(/\/mytask/, (msg) => {
+bot.onText(/\/addim/, (msg) => {
   const userId = msg.from.id;
   const data = loadData();
   const member = data.members[userId];
@@ -100,16 +100,16 @@ bot.onText(/\/mytask/, (msg) => {
   }
  
   const idx = member.pending[member.pending.length - 1];
-  bot.sendMessage(userId, `📋 Bu həftəki tapşırığın:\n\n*${data.options[idx]}*\n\nBitirdikdə /done yazın ✅`, { parse_mode: 'Markdown' });
+  bot.sendMessage(userId, `📋 Bu həftəki tapşırığın:\n\n*${data.options[idx]}*\n\nBitirdikdə /etdim yazın ✅`, { parse_mode: 'Markdown' });
 });
  
-bot.onText(/\/done/, (msg) => {
+bot.onText(/\/etdim/, (msg) => {
   const userId = msg.from.id;
   const data = loadData();
   const member = data.members[userId];
  
   if (!member || member.pending.length === 0) {
-    return bot.sendMessage(userId, 'Aktiv tapşırığın yoxdur. /mytask yazın.');
+    return bot.sendMessage(userId, 'Aktiv tapşırığın yoxdur. /addim yazın.');
   }
  
   const idx = member.pending.pop();
@@ -119,13 +119,13 @@ bot.onText(/\/done/, (msg) => {
   bot.sendMessage(userId, '✅ Əla! Tapşırığı tamamladın. Allah qəbul etsin! 🤲');
 });
  
-bot.onText(/\/notdone/, (msg) => {
+bot.onText(/\/etmedim/, (msg) => {
   const userId = msg.from.id;
   const data = loadData();
   const member = data.members[userId];
  
   if (!member || member.pending.length === 0) {
-    return bot.sendMessage(userId, 'Aktiv tapşırığın yoxdur. /mytask yazın.');
+    return bot.sendMessage(userId, 'Aktiv tapşırığın yoxdur. /addim yazın.');
   }
  
   const idx = member.pending[member.pending.length - 1];
@@ -201,7 +201,7 @@ bot.onText(/\/send/, async (msg) => {
     mesaj += `👤 ${member.name}: *${data.options[optionIndex]}*\n`;
   }
  
-  mesaj += `\nTapşırığını görmək üçün bota şəxsi /mytask yazın.\nTamamladıqda /done ✅, tamamlamadıqda /notdone ❌`;
+  mesaj += `\nTapşırığını görmək üçün bota şəxsi /addim yazın.\nTamamladıqda /etdim ✅, tamamlamadıqda /etmedim ❌`;
  
   try {
     await bot.sendMessage(CONFIG.CHANNEL_ID, mesaj, { parse_mode: 'Markdown' });
