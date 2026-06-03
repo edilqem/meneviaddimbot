@@ -7,9 +7,9 @@ const schedule = require('node-schedule');
 // CONFIG - CHANGE HERE
 // =============================================
 const CONFIG = {
-  TOKEN: 'BURAYA_BOT_TOKEN_YAZ',
-  ADMIN_ID: 123456789,
-  CHANNEL_ID: '@kanal_adi',
+  TOKEN: '8979500063:AAG0EgyPhv4IZt6953vwpyFgmWJlrNSaIFM',
+  ADMIN_ID: 737032371,
+  CHANNEL_ID: '@meneviaddim',
 };
 // =============================================
 
