@@ -106,7 +106,7 @@ bot.onText(/\/addim/, (msg) => {
   }
 
   const idx = member.pending[member.pending.length - 1];
-  bot.sendMessage(userId, `📋 Bu həftəki tapşırığın:\n\n*${data.options[idx]}*\n\nBitirdikdə /etdim yazın ✅`, { parse_mode: 'Markdown' });
+  bot.sendMessage(userId, `📋 Bu həftəki tapşırığın:\n\n*${data.options[idx]}*\n\nBitirdikdə /etdim ✅\nEdə bilmədikdə /etmedim ❌`, { parse_mode: 'Markdown' });
 });
 
 bot.onText(/\/etdim/, (msg) => {
@@ -117,7 +117,11 @@ bot.onText(/\/etdim/, (msg) => {
   if (!member || member.pending.length === 0) {
     return bot.sendMessage(userId, 'Aktiv tapşırığın yoxdur. /addim yazın.');
   }
-
+  
+  if (member.awaitingReason || member.missedCount > 0 && !member.awaitingPenalty) {
+    return bot.sendMessage(userId, '❌ Bu həftə tapşırığı etmədiyini bildirmişdin. Növbəti həftə yeni tapşırıq veriləcək.');
+  }
+  
   if (member.awaitingPenalty) {
     // Cəzanı etdi
     member.awaitingPenalty = false;
@@ -143,7 +147,7 @@ bot.onText(/\/etdim/, (msg) => {
 
   data.weeklyLog.push({ userId, name: member.name, optionIndex: idx, result: 'done', streak: member.streak, date: new Date().toISOString() });
   saveData(data);
-  bot.sendMessage(userId, `✅ Əla! Tapşırığı tamamladın. Allah qəbul etsin! 🤲\n\n🔥 Ardıcıl streak: *${member.streak} həftə*`, { parse_mode: 'Markdown' });
+  bot.sendMessage(userId, `✅ Əla! Tapşırığı tamamladın. Allah qəbul etsin! 🤲\n\n🔥 Davamlılıq: *${member.streak} həftə*`, { parse_mode: 'Markdown' });
 });
 
 bot.onText(/\/etmedim/, (msg) => {
@@ -323,7 +327,7 @@ bot.onText(/\/members/, (msg) => {
   const members = Object.entries(data.members);
   if (!members.length) return bot.sendMessage(msg.chat.id, 'Heç bir üzv yoxdur.');
   const list = members.map(([id, m]) =>
-    `👤 ${m.name} (ID: ${id}) - Streak: ${m.streak || 0} | Tamamlanan: ${m.completed.length}`
+    `👤 ${m.name} (ID: ${id}) - Davamlılıq: ${m.streak || 0} | Tamamlanan: ${m.completed.length}`
   ).join('\n');
   bot.sendMessage(msg.chat.id, `*Üzvlər (${members.length} nəfər):*\n\n${list}`, { parse_mode: 'Markdown' });
 });
