@@ -11,6 +11,9 @@ const CONFIG = {
   ADMIN_ID: 737032371,
   CHANNEL_ID: '@meneviaddim',
 };
+
+// İcazə üçün minimum gözləmə müddəti (gün)
+const ICAZE_COOLDOWN_DAYS = 21; // 3 həftə
 // =============================================
 
 const bot = new TelegramBot(CONFIG.TOKEN, { polling: true });
@@ -45,7 +48,7 @@ function buildPool(data) {
 function assignOption(data, userId, userName) {
   if (!data.options.length) return null;
   if (!data.members[userId]) {
-    data.members[userId] = { name: userName, assignments: [], completed: [], pending: [], streak: 0, missedCount: 0, penalized: false, awaitingReason: false, awaitingPenalty: false };
+    data.members[userId] = { name: userName, assignments: [], completed: [], pending: [], streak: 0, missedCount: 0, penalized: false, awaitingReason: false, awaitingPenalty: false, lastIcaze: null };
   }
   buildPool(data);
   let optionIndex = null;
@@ -67,6 +70,14 @@ function assignOption(data, userId, userName) {
   return optionIndex;
 }
 
+// İcazə cooldown yoxlaması: neçə gün qalıb? (0 = istifadə edə bilər)
+function icazeQalanGun(member) {
+  if (!member.lastIcaze) return 0;
+  const kecenGun = (Date.now() - new Date(member.lastIcaze).getTime()) / (1000 * 60 * 60 * 24);
+  if (kecenGun >= ICAZE_COOLDOWN_DAYS) return 0;
+  return Math.ceil(ICAZE_COOLDOWN_DAYS - kecenGun);
+}
+
 // ---- USER COMMANDS ----
 
 bot.onText(/\/start/, (msg) => {
@@ -74,7 +85,7 @@ bot.onText(/\/start/, (msg) => {
   const name = msg.from.first_name;
   const data = loadData();
   if (!data.members[userId]) {
-    data.members[userId] = { name, assignments: [], completed: [], pending: [], streak: 0, missedCount: 0, penalized: false, awaitingReason: false, awaitingPenalty: false };
+    data.members[userId] = { name, assignments: [], completed: [], pending: [], streak: 0, missedCount: 0, penalized: false, awaitingReason: false, awaitingPenalty: false, lastIcaze: null };
     saveData(data);
   }
   bot.sendMessage(userId,
@@ -84,7 +95,8 @@ bot.onText(/\/start/, (msg) => {
     `• Bu səhifədə /addim yazıb öz tapşırığını görə bilərsən\n` +
     `• Tapşırıq həmçinin kanalda da əks olunacaq\n\n` +
     `Tapşırığı tamamladıqda /etdim ✅\n` +
-    `Tamamlaya bilmədikdə /etmedim ❌`
+    `Tamamlaya bilmədikdə /etmedim ❌\n` +
+    `İstirahət lazımdırsa /icaze 🏖 (minimum 3 həftədən bir)`
   );
 });
 
@@ -106,7 +118,73 @@ bot.onText(/\/addim/, (msg) => {
   }
 
   const idx = member.pending[member.pending.length - 1];
-  bot.sendMessage(userId, `📋 Bu həftəki tapşırığın:\n\n*${data.options[idx]}*\n\nBitirdikdə /etdim ✅\nEdə bilmədikdə /etmedim ❌`, { parse_mode: 'Markdown' });
+  bot.sendMessage(userId,
+    `📋 Bu həftəki tapşırığın:\n\n*${data.options[idx]}*\n\n` +
+    `Bitirdikdə /etdim ✅\nEdə bilmədikdə /etmedim ❌\n` +
+    `İstirahət lazımdırsa /icaze 🏖`, { parse_mode: 'Markdown' });
+});
+
+// ---- İCAZƏ ----
+bot.onText(/\/icaze/, (msg) => {
+  const userId = msg.from.id;
+  const data = loadData();
+  const member = data.members[userId];
+
+  // Aktiv tapşırıq yoxdursa
+  if (!member || member.pending.length === 0) {
+    return bot.sendMessage(userId, '⏳ Aktiv tapşırığın yoxdur. İcazə yalnız aktiv tapşırıq olanda istifadə oluna bilər.');
+  }
+
+  // Cəza gözləyənlər icazə ala bilməz
+  if (member.awaitingPenalty) {
+    return bot.sendMessage(userId,
+      `⚠️ Cəza tapşırığı gözləyirsən — icazə istifadə edə bilməzsən.\n\n` +
+      `*1 gün nafile oruc tut* və ya *bir günün bir adama yetən yeməyi qədər sədəqə ver*, sonra /etdim yaz.`,
+      { parse_mode: 'Markdown' }
+    );
+  }
+
+  // Artıq /etmedim yazıbsa (səbəb gözlənilir)
+  if (member.awaitingReason) {
+    return bot.sendMessage(userId, '❌ Artıq /etmedim yazmısan, bu həftə icazə istifadə edə bilməzsən. Səbəbini yaz (1, 2, 3 və ya 4).');
+  }
+
+  // Bu həftə artıq "etmədim" qeydə alınıbsa
+  const missedThisWeek = data.weeklyLog.some(l => l.userId === userId && l.result === 'missed');
+  if (missedThisWeek) {
+    return bot.sendMessage(userId, '❌ Bu həftə tapşırığı etmədiyini artıq bildirmisən — icazə istifadə edə bilməzsən.');
+  }
+
+  // 3 həftəlik cooldown yoxlaması
+  const qalan = icazeQalanGun(member);
+  if (qalan > 0) {
+    return bot.sendMessage(userId,
+      `⏳ İcazədən sonra minimum 3 həftə keçməlidir.\n\nNövbəti icazəyə qalan: *${qalan} gün*`,
+      { parse_mode: 'Markdown' }
+    );
+  }
+
+  // İcazə qəbul edildi ✅
+  const idx = member.pending.pop();
+  member.lastIcaze = new Date().toISOString();
+  member.awaitingReason = false;
+  // streak dondurulur — nə artır, nə sıfırlanır
+
+  data.weeklyLog.push({ userId, name: member.name, optionIndex: idx, result: 'icaze', streak: member.streak || 0, date: new Date().toISOString() });
+  saveData(data);
+
+  // Kanalda şəffaf bildiriş
+  bot.sendMessage(CONFIG.CHANNEL_ID,
+    `🏖 *${member.name}* bu həftə icazə götürdü. Davamlılığı qorunur. 👍`,
+    { parse_mode: 'Markdown' }
+  );
+
+  bot.sendMessage(userId,
+    `🏖 İcazən qəbul edildi!\n\n` +
+    `Bu həftəki tapşırıq sayılmayacaq və davamlılığın (*${member.streak || 0} həftə*) qorunur.\n\n` +
+    `⏳ Növbəti icazəni minimum *3 həftə* sonra istifadə edə bilərsən.`,
+    { parse_mode: 'Markdown' }
+  );
 });
 
 bot.onText(/\/etdim/, (msg) => {
@@ -310,7 +388,9 @@ async function doWeeklySend() {
     const optionIndex = assignOption(data, userId, member.name);
     mesaj += `👤 ${member.name}: *${data.options[optionIndex]}*\n`;
   }
-  mesaj += `\nTapşırığını görmək üçün bota şəxsi /addim yazın.\nTamamladıqda /etdim ✅, tamamlamadıqda /etmedim ❌`;
+  mesaj += `\nTapşırığını görmək üçün bota şəxsi /addim yazın.\n` +
+    `Tamamladıqda /etdim ✅, tamamlamadıqda /etmedim ❌\n\n` +
+    `🏖 İstirahət lazımdırsa /icaze yazıb həmin həftə tapşırığı etməyə bilərsiniz (icazədən sonra minimum 3 həftə keçməlidir).`;
 
   try {
     await bot.sendMessage(CONFIG.CHANNEL_ID, mesaj, { parse_mode: 'Markdown' });
@@ -326,9 +406,11 @@ bot.onText(/\/members/, (msg) => {
   const data = loadData();
   const members = Object.entries(data.members);
   if (!members.length) return bot.sendMessage(msg.chat.id, 'Heç bir üzv yoxdur.');
-  const list = members.map(([id, m]) =>
-    `👤 ${m.name} (ID: ${id}) - Davamlılıq: ${m.streak || 0} | Tamamlanan: ${m.completed.length}`
-  ).join('\n');
+  const list = members.map(([id, m]) => {
+    const qalan = icazeQalanGun(m);
+    const icazeText = qalan > 0 ? ` | İcazə: ${qalan} gün sonra` : ' | İcazə: ✅';
+    return `👤 ${m.name} (ID: ${id}) - Davamlılıq: ${m.streak || 0} | Tamamlanan: ${m.completed.length}${icazeText}`;
+  }).join('\n');
   bot.sendMessage(msg.chat.id, `*Üzvlər (${members.length} nəfər):*\n\n${list}`, { parse_mode: 'Markdown' });
 });
 
@@ -352,6 +434,7 @@ async function sendWeeklyReport() {
   const data = loadData();
   const done = data.weeklyLog.filter(l => l.result === 'done');
   const missed = data.weeklyLog.filter(l => l.result === 'missed');
+  const icaze = data.weeklyLog.filter(l => l.result === 'icaze');
   const penalized = Object.values(data.members).filter(m => m.awaitingPenalty);
 
   // Streak sıralaması - ən çox ardıcıl edənlər yuxarıda
@@ -364,6 +447,13 @@ async function sendWeeklyReport() {
     const streakText = l.streak > 1 ? ` 🔥 ${l.streak} həftə ardıcıl` : '';
     report += `  • ${l.name}: _${data.options[l.optionIndex] || '?'}_${streakText}\n`;
   });
+
+  if (icaze.length) {
+    report += `\n🏖 *İcazəlilər (${icaze.length}):*\n`;
+    icaze.forEach(l => {
+      report += `  • ${l.name} — bu həftə icazədə idi (davamlılığı qorunur: ${l.streak} həftə)\n`;
+    });
+  }
 
   if (missed.length) {
     report += `\n❌ *Tamamlamayanlar (${missed.length}):*\n`;
