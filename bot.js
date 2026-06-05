@@ -421,14 +421,14 @@ bot.onText(/\/report/, (msg) => {
   bot.sendMessage(msg.chat.id, '📊 Hesabat göndərildi.');
 });
 
-// Cümə saat 12:00 - tapşırıq paylaş
-schedule.scheduleJob({ dayOfWeek: 5, hour: 12, minute: 0 }, doWeeklySend);
+// Cümə saat 12:00 (Bakı vaxtı) - tapşırıq paylaş
+schedule.scheduleJob({ dayOfWeek: 5, hour: 12, minute: 0, tz: 'Asia/Baku' }, doWeeklySend);
 
-// Çərşənbə axşamı (4cü gün) saat 22:00 - hesabat
-schedule.scheduleJob({ dayOfWeek: 4, hour: 22, minute: 0 }, sendWeeklyReport);
+// Cümə axşamı saat 22:00 (Bakı vaxtı) - hesabat
+schedule.scheduleJob({ dayOfWeek: 4, hour: 22, minute: 0, tz: 'Asia/Baku' }, sendWeeklyReport);
 
-// Cümə axşamı (5ci günün əvvəli) saat 10:00 - xatırlatma (1 gün qalmış)
-schedule.scheduleJob({ dayOfWeek: 4, hour: 10, minute: 0 }, async () => {
+// Cümə axşamı saat 10:00 (Bakı vaxtı) - xatırlatma
+schedule.scheduleJob({ dayOfWeek: 4, hour: 10, minute: 0, tz: 'Asia/Baku' }, async () => {
   const data = loadData();
   const pending = Object.values(data.members).filter(m => m.pending.length > 0 && !m.awaitingPenalty);
   if (!pending.length) return;
