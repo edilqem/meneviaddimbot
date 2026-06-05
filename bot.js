@@ -7,7 +7,7 @@ const schedule = require('node-schedule');
 // CONFIG - CHANGE HERE
 // =============================================
 const CONFIG = {
-  TOKEN: '8979500063:AAG0EgyPhv4IZt6953vwpyFgmWJlrNSaIFM',
+  TOKEN: '8979500063:AAH84i-uX1x85eAHSMfvbu1t6uhBta_5RvQ',
   ADMIN_ID: 737032371,
   CHANNEL_ID: '@meneviaddim',
 };
