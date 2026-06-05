@@ -174,10 +174,10 @@ bot.onText(/\/icaze/, (msg) => {
   saveData(data);
 
   // Kanalda şəffaf bildiriş
-  bot.sendMessage(CONFIG.CHANNEL_ID,
-    `🏖 *${member.name}* bu həftə icazə götürdü. Davamlılığı qorunur. 👍`,
-    { parse_mode: 'Markdown' }
-  );
+  //bot.sendMessage(CONFIG.CHANNEL_ID,
+  //  `🏖 *${member.name}* bu həftə icazə götürdü. Davamlılığı qorunur. 👍`,
+ //   { parse_mode: 'Markdown' }
+//  );
 
   bot.sendMessage(userId,
     `🏖 İcazən qəbul edildi!\n\n` +
