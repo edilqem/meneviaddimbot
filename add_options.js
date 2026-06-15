@@ -43,7 +43,7 @@ const OPTIONS = [
 
   // SƏDƏQƏ VƏ YARDIM
   "5 manat sədəqə ver",
-  "Qazancının 1 faizi qədər sədəqə ver",
+  "Aylıq qazancının 1 faizi qədər sədəqə ver",
   "Bir yoxsula yardım et",
   "Bir ehtiyaclı ailəyə ərzaq al",
   "Birinin borcunu ödə (bacardığın qədər) və ya sənə borcu olanın borcunu bağışla (bacardığın qədər)",
