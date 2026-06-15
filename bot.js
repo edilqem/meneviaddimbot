@@ -21,17 +21,6 @@ const bot = new TelegramBot(CONFIG.TOKEN, { polling: true });
 const DB_FILE = '/data/data.json';
 const OLD_DB_FILE = path.join(__dirname, 'data.json');
 
-try {
-  if (!fs.existsSync(DB_FILE) && fs.existsSync(OLD_DB_FILE)) {
-    fs.copyFileSync(OLD_DB_FILE, DB_FILE);
-    console.log('✅ Köhnə data /data-ya köçürüldü');
-  } else {
-    console.log('ℹ️ Miqrasiyaya ehtiyac yoxdur, boş başlanır');
-  }
-} catch (e) {
-  console.log('⚠️ Miqrasiya xətası (problem deyil):', e.message);
-}
-
 // ---- DATABASE ----
 function loadData() {
   if (!fs.existsSync(DB_FILE)) {
