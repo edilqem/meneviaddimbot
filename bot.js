@@ -320,6 +320,11 @@ bot.on('message', (msg) => {
 // ADMIN COMMANDS
 // =============================================
 
+bot.onText(/\/backup/, (msg) => {
+  if (!isAdmin(msg.from.id)) return;
+  bot.sendDocument(msg.chat.id, DB_FILE, {}, { filename: 'data.json' });
+});
+
 bot.onText(/\/admin/, (msg) => {
   if (!isAdmin(msg.from.id)) return;
   bot.sendMessage(msg.chat.id,
@@ -330,6 +335,7 @@ bot.onText(/\/admin/, (msg) => {
     `/send - Kanala tapşırıqları paylaş\n` +
     `/report - Həftəlik hesabat göndər\n` +
     `/members - Qeydiyyatlı üzvlər\n` +
+    `/backup - Data faylının ehtiyat nüsxəsini al\n` +
     `/reset - Yeni həftəyə sıfırla`,
     { parse_mode: 'Markdown' }
   );
