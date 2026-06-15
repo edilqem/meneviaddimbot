@@ -17,7 +17,14 @@ const ICAZE_COOLDOWN_DAYS = 21; // 3 həftə
 // =============================================
 
 const bot = new TelegramBot(CONFIG.TOKEN, { polling: true });
-const DB_FILE = path.join(__dirname, 'data.json');
+const DB_FILE = '/data/data.json';
+const OLD_DB_FILE = path.join(__dirname, 'data.json');
+
+// Bir dəfəlik miqrasiya: köhnə data-nı Volume-a köçür
+if (!fs.existsSync(DB_FILE) && fs.existsSync(OLD_DB_FILE)) {
+  fs.copyFileSync(OLD_DB_FILE, DB_FILE);
+  console.log('✅ Köhnə data /data-ya köçürüldü');
+}
 
 // ---- DATABASE ----
 function loadData() {
@@ -379,7 +386,7 @@ async function doWeeklySend() {
   const data = loadData();
   if (!data.options.length || !Object.keys(data.members).length) return;
 
-  let mesaj = `🌙 *Salam Aleykum, Cüməniz mübarək!* 🤲\n\n*Bu həftəki tapşırıqlar:*\n\n`;
+  let mesaj = `🌙 *Salam Aleykum!* 🤲\n\n*Bu həftəki tapşırıqlar:*\n\n`;
   for (const [userId, member] of Object.entries(data.members)) {
     if (member.awaitingPenalty) {
       mesaj += `👤 ${member.name}: ⚠️ _Cəza tapşırığı gözləyir_\n`;
@@ -432,6 +439,21 @@ bot.onText(/\/reset/, (msg) => {
 // ---- WEEKLY REPORT ----
 async function sendWeeklyReport() {
   const data = loadData();
+
+  // Heç cavab verməyənləri "etmədim" kimi qeyd et
+  for (const [userId, member] of Object.entries(data.members)) {
+    if (member.pending.length > 0 && !member.awaitingPenalty) {
+      const alreadyLogged = data.weeklyLog.some(l => String(l.userId) === userId);
+      if (!alreadyLogged) {
+        const idx = member.pending[member.pending.length - 1];
+        member.missedCount = (member.missedCount || 0) + 1;
+        member.streak = 0;
+        if (member.missedCount >= 2) member.awaitingPenalty = true;
+        data.weeklyLog.push({ userId, name: member.name, optionIndex: idx, result: 'missed', reason: 'Cavab vermədi', streak: 0, date: new Date().toISOString() });
+      }
+    }
+  }
+  
   const done = data.weeklyLog.filter(l => l.result === 'done');
   const missed = data.weeklyLog.filter(l => l.result === 'missed');
   const icaze = data.weeklyLog.filter(l => l.result === 'icaze');
