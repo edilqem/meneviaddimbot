@@ -18,8 +18,7 @@ const ICAZE_COOLDOWN_DAYS = 21; // 3 həftə
 
 const bot = new TelegramBot(CONFIG.TOKEN, { polling: true });
 
-const DB_FILE = '/data/data.json';
-const OLD_DB_FILE = path.join(__dirname, 'data.json');
+const DB_FILE = path.join(__dirname, 'data.json');
 
 // ---- DATABASE ----
 function loadData() {
